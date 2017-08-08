@@ -11,7 +11,7 @@
 std::array<uint8_t, 1536> packet; // (3<<9)
 sockaddr_in scaServer, scaMulti;
 
-int main() {
+int main(int argc, char const *argv[]) {
 	int recv_fd = socket(AF_INET, SOCK_DGRAM, 0), send_fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (recv_fd < 0 || send_fd < 0) {
 		std::cerr << "Can't create sockets.\n";
@@ -19,7 +19,7 @@ int main() {
 	}
 
 	scaServer.sin_family = AF_INET;
-	scaServer.sin_addr.s_addr = inet_addr("192.167.1.1");
+	scaServer.sin_addr.s_addr = inet_addr(argc > 1 ? argv[1] : "192.167.1.1");
 	scaServer.sin_port = htons(9430);
 
 	scaMulti.sin_family = AF_INET;
@@ -35,15 +35,14 @@ int main() {
 	for (int i=0; ; ++i) {
 		int bytes = recv(recv_fd, packet.data(), packet.size(), 0);
 		int val = sendto(send_fd, packet.data(), bytes, 0, (sockaddr const *)&scaMulti, sizeof(scaMulti));
+
 		if (val == -1)
 			std::cerr << "Error: " <<  errno << std::endl;
+
 		auto prev_time = time;
 		time = std::chrono::system_clock::now();
 		auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(time - prev_time);
 		std::cout << i << ' ' << size_t(packet[0]) << ' ' <<  bytes << ' ' << diff.count() << std::endl;
-//		for (int j=0; j<bytes; ++j)
-//			std::cout << size_t(packet[j]) << ' ';
-//		std::cout << std::endl;
 	}
 
 	return 0;
